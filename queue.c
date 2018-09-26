@@ -63,26 +63,30 @@ void q_free(queue_t *q)
  */
 bool q_insert_head(queue_t *q, char *s)
 {
-    list_ele_t *newh;
-    /* What should you do if the q is NULL? */
     if (q == NULL) {
         return false;
     }
 
+    list_ele_t *newh;
+    /* What should you do if the q is NULL? */
 
     newh = (list_ele_t *) malloc(sizeof(list_ele_t));
     /* Don't forget to allocate space for the string and copy it */
     if (newh == NULL) {
         return false;
     }
-    newh->value = malloc(strlen(s) + 1);
 
-    /* What if either call to malloc returns NULL? */
+    newh->value = malloc(strlen(s) + 1);
+    if (newh->value == NULL) {
+        free(newh);
+        return false;
+    }
     strcpy(newh->value, s);
+    /* What if either call to malloc returns NULL? */
 
     // Check if the queue is empty
     // If empty then assign the new node to both head and tail
-    if (q->tail == NULL) {
+    if (q->list_count == 0) {
         q->tail = newh;
     }
 
@@ -102,11 +106,11 @@ bool q_insert_head(queue_t *q, char *s)
  */
 bool q_insert_tail(queue_t *q, char *s)
 {
-    list_ele_t *newh;
-
     if (q == NULL) {
         return false;
     }
+
+    list_ele_t *newh;
 
     newh = (list_ele_t *) malloc(sizeof(list_ele_t));
     if (newh == NULL) {
@@ -114,10 +118,13 @@ bool q_insert_tail(queue_t *q, char *s)
     }
 
     newh->value = malloc(strlen(s) + 1);
-
+    if (newh->value == NULL) {
+        free(newh);
+        return false;
+    }
     strcpy(newh->value, s);
 
-    if (q->head == NULL || q->tail == NULL) {
+    if (q->list_count == 0) {
         q->head = newh;
     } else {
         q->tail->next = newh;
@@ -153,10 +160,7 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
             sp[length] = '\0';
         }
     }
-    // int i = 0;
-    // for(i = 0; q->head->value[i] != '\0' && i < bufsize; i++) {
-    //     sp[i] = q->head->value[i];
-    // }
+
     list_ele_t *temp = q->head;
     q->head = q->head->next;
     free(temp->value);
