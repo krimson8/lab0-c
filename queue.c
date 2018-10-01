@@ -44,9 +44,9 @@ void q_free(queue_t *q)
         list_ele_t *itr = q->head;
         while (q->head != NULL) {
             itr = q->head;
-            if (q->head->value != NULL) {
-                free(q->head->value);
-            }
+            // if (q->head->value != NULL) {
+            //     free(q->head->value);
+            // }
             q->head = q->head->next;
             free(itr);
         }
@@ -76,12 +76,11 @@ bool q_insert_head(queue_t *q, char *s)
         return false;
     }
 
-    newh->value = malloc(strlen(s) + 1);
+    newh->value = strdup(s);
     if (newh->value == NULL) {
         free(newh);
         return false;
     }
-    strcpy(newh->value, s);
     /* What if either call to malloc returns NULL? */
 
     // Check if the queue is empty
@@ -117,12 +116,11 @@ bool q_insert_tail(queue_t *q, char *s)
         return false;
     }
 
-    newh->value = malloc(strlen(s) + 1);
+    newh->value = strdup(s);
     if (newh->value == NULL) {
         free(newh);
         return false;
     }
-    strcpy(newh->value, s);
 
     if (q->list_count == 0) {
         q->head = newh;
@@ -163,7 +161,7 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 
     list_ele_t *temp = q->head;
     q->head = q->head->next;
-    free(temp->value);
+    // free(temp->value);
     free(temp);
     q->list_count--;
     return true;
@@ -194,18 +192,16 @@ void q_reverse(queue_t *q)
 {
     /* You need to write the code for this function */
     if (q != NULL && q->head != NULL && q->head->next != NULL) {
-        list_ele_t *itr1 = q->head;
-        list_ele_t *itr2 = q->head->next;
+        list_ele_t *itr = q->head->next;
         list_ele_t *temp;
 
-        q->tail = itr1;
-        while (itr2 != NULL) {
-            temp = itr2->next;
-            itr2->next = itr1;
-            itr1 = itr2;
-            itr2 = temp;
+        q->tail = q->head;
+        while (itr != NULL) {
+            temp = itr->next;
+            itr->next = q->head;
+            q->head = itr;
+            itr = temp;
         }
-        q->head = itr1;
         q->tail->next = NULL;
     }
 }
