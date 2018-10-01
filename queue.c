@@ -44,9 +44,9 @@ void q_free(queue_t *q)
         list_ele_t *itr = q->head;
         while (q->head != NULL) {
             itr = q->head;
-            // if (q->head->value != NULL) {
-            //     free(q->head->value);
-            // }
+            if (q->head->value != NULL) {
+                free(q->head->value);
+            }
             q->head = q->head->next;
             free(itr);
         }
@@ -76,11 +76,12 @@ bool q_insert_head(queue_t *q, char *s)
         return false;
     }
 
-    newh->value = strdup(s);
+    newh->value = malloc(strlen(s) + 1);
     if (newh->value == NULL) {
         free(newh);
         return false;
     }
+    strcpy(newh->value, s);
     /* What if either call to malloc returns NULL? */
 
     // Check if the queue is empty
@@ -116,11 +117,12 @@ bool q_insert_tail(queue_t *q, char *s)
         return false;
     }
 
-    newh->value = strdup(s);
+    newh->value = malloc(strlen(s) + 1);
     if (newh->value == NULL) {
         free(newh);
         return false;
     }
+    strcpy(newh->value, s);
 
     if (q->list_count == 0) {
         q->head = newh;
@@ -144,24 +146,19 @@ bool q_insert_tail(queue_t *q, char *s)
 bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 {
     /* You need to fix up this code. */
-    if (q == NULL || q->head == NULL) {
+    if (q == NULL || q->list_count == 0) {
         return false;
     }
 
     if (sp != NULL) {
-        int length = strlen(q->head->value);
-        if (length > bufsize - 1) {
-            strncpy(sp, q->head->value, bufsize - 1);
-            sp[bufsize - 1] = '\0';
-        } else {
-            strncpy(sp, q->head->value, length);
-            sp[length] = '\0';
-        }
+        strncpy(sp, q->head->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';
     }
 
     list_ele_t *temp = q->head;
     q->head = q->head->next;
-    // free(temp->value);
+
+    free(temp->value);
     free(temp);
     q->list_count--;
     return true;
@@ -175,10 +172,7 @@ int q_size(queue_t *q)
 {
     /* You need to write the code for this function */
     /* Remember: It should operate in O(1) time */
-    if (q == NULL || q->head == NULL) {
-        return 0;
-    }
-    return q->list_count;
+    return q ? q->list_count : 0;
 }
 
 /*
