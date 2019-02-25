@@ -9,8 +9,10 @@ class Tracer:
     
     traceDirectory = "./traces"
     qtest = "./qtest"
+    command = qtest
     verbLevel = 0
     autograde = False
+    useValgrind = False
 
     traceDict = {
         1 : "trace-01-ops",
@@ -51,50 +53,56 @@ class Tracer:
 
     maxScores = [0, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]
 
-    def __init__(self, qtest = "", verbLevel = 0, autograde = False):
+    def __init__(self, qtest = "", verbLevel = 0, autograde = False, useValgrind = False):
         if qtest != "":
             self.qtest = qtest
         self.verbLevel = verbLevel
         self.autograde = autograde
+        self.useValgrind = useValgrind
 
     def runTrace(self, tid):
         if not tid in self.traceDict:
-            print "ERROR: No trace with id %d" % tid
+            print("ERROR: No trace with id %d" % tid)
             return False
         fname = "%s/%s.cmd" % (self.traceDirectory, self.traceDict[tid])
         vname = "%d" % self.verbLevel
-        clist = [self.qtest, "-v", vname, "-f", fname]
+        clist = [self.command, self.qtest, "-v", vname, "-f", fname]
         try:
             retcode = subprocess.call(clist)
         except Exception as e:
-            print "Call of '%s' failed: %s" % (" ".join(clist), e)
+            print("Call of '%s' failed: %s" % (" ".join(clist), e))
             return False
         return retcode == 0
 
     def run(self, tid = 0):
         scoreDict = { k : 0 for k in self.traceDict.keys() }
-        print "---\tTrace\t\tPoints"
+        print("---\tTrace\t\tPoints")
         if tid == 0:
             tidList = self.traceDict.keys()
         else:
             if not tid in self.traceDict:
-                print "ERROR: Invalid trace ID %d" % tid
+                print("ERROR: Invalid trace ID %d" % tid)
                 return
             tidList = [tid]
         score = 0
         maxscore = 0
+        if self.useValgrind:
+            self.command = 'valgrind'
+        else:
+            self.command = self.qtest
+            self.qtest = ''
         for t in tidList:
             tname = self.traceDict[t]
             if self.verbLevel > 0:
-                print "+++ TESTING trace %s:" % tname
+                print("+++ TESTING trace %s:" % tname)
             ok = self.runTrace(t)
             maxval = self.maxScores[t]
             tval = maxval if ok else 0
-            print "---\t%s\t%d/%d" % (tname, tval, maxval)
+            print("---\t%s\t%d/%d" % (tname, tval, maxval))
             score += tval
             maxscore += maxval
             scoreDict[t] = tval
-        print "---\tTOTAL\t\t%d/%d" % (score, maxscore)
+        print("---\tTOTAL\t\t%d/%d" % (score, maxscore))
         if self.autograde:
             # Generate JSON string
             jstring = '{"scores": {'
@@ -105,14 +113,14 @@ class Tracer:
                 first = False
                 jstring += '"%s" : %d' % (self.traceProbs[k], scoreDict[k])
             jstring += '}}'
-            print jstring
+            print(jstring)
 
 def usage(name):
-    print "Usage: %s [-h] [-p PROG] [-t TID] [-v VLEVEL]" % name
-    print "  -h        Print this message"
-    print "  -p PROG   Program to test"
-    print "  -t TID    Trace ID to test"
-    print "  -v VLEVEL Set verbosity level (0-3)"
+    print("Usage: %s [-h] [-p PROG] [-t TID] [-v VLEVEL] [--valgrind]" % name)
+    print("  -h        Print this message")
+    print("  -p PROG   Program to test")
+    print("  -t TID    Trace ID to test")
+    print("  -v VLEVEL Set verbosity level (0-3)")
     sys.exit(0)
 
 def run(name, args):
@@ -121,9 +129,10 @@ def run(name, args):
     vlevel = 1
     levelFixed = False
     autograde = False
+    useValgrind = False
     
 
-    optlist, args = getopt.getopt(args, 'hp:t:v:A')
+    optlist, args = getopt.getopt(args, 'hp:t:v:A', ['valgrind'])
     for (opt, val) in optlist:
         if opt == '-h':
             usage(name)
@@ -136,16 +145,15 @@ def run(name, args):
             levelFixed = True
         elif opt == '-A':
             autograde = True
+        elif opt == '--valgrind':
+            useValgrind = True
         else:
-            print "Unrecognized option '%s'" % opt
+            print("Unrecognized option '%s'" % opt)
             usage(name)
     if not levelFixed and autograde:
         vlevel = 0
-    t = Tracer(qtest = prog, verbLevel = vlevel, autograde = autograde)
+    t = Tracer(qtest = prog, verbLevel = vlevel, autograde = autograde, useValgrind = useValgrind)
     t.run(tid)
 
 if __name__ == "__main__":
     run(sys.argv[0], sys.argv[1:])
-            
-        
-
